@@ -3,7 +3,7 @@
 #include <zephyr/drivers/gpio.h>
 
 #define SLEEP_LED0_MS 1000   // LED0: 1 segundo
-#define SLEEP_LED1_MS 500    // LED1: 0,5 segundo
+#define SLEEP_LED1_MS 350   // LED1: 0,5 segundo
 
 // LEDs onboard da KL25Z (RGB)
 #define LED0_NODE DT_ALIAS(led0)   // geralmente verde
