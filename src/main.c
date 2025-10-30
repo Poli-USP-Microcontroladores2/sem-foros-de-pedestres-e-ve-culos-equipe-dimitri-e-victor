@@ -1,11 +1,16 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/printk.h>
 
-// Tempos de acendimento de cada LED
+// Tempos de acendimento de cada LED - Modo Dia
 #define TEMPO_VERDE_MS    3000   // 3 segundos
 #define TEMPO_AMARELO_MS  1000   // 1 segundo
 #define TEMPO_VERMELHO_MS 4000   // 4 segundos
+
+// Tempos do modo noturno - Amarelo piscante
+#define TEMPO_PISCA_ON_MS  1000  // 1 segundo aceso
+#define TEMPO_PISCA_OFF_MS 1000  // 1 segundo apagado
 
 // LEDs onboard da KL25Z (RGB)
 #define LED_VERDE_NODE    DT_ALIAS(led0)   // LED verde
@@ -32,6 +37,35 @@ K_MUTEX_DEFINE(led_mutex);
 K_SEM_DEFINE(sem_verde, 1, 1);      // Verde começa primeiro
 K_SEM_DEFINE(sem_amarelo, 0, 1);    // Amarelo espera
 K_SEM_DEFINE(sem_vermelho, 0, 1);   // Vermelho espera
+
+// *** CONFIGURAÇÃO DO MODO ***
+// 0 = Modo Dia (sequência normal)
+// 1 = Modo Noite (amarelo piscante)
+#define MODO_OPERACAO 0
+
+/* =====================================================================
+ * Modo Noite - Amarelo Piscante
+ * ===================================================================== */
+void modo_noite(void)
+{
+    printk("\n*** MODO NOTURNO ATIVADO ***\n");
+    printk("Amarelo piscando: %d ms aceso, %d ms apagado\n\n",
+           TEMPO_PISCA_ON_MS, TEMPO_PISCA_OFF_MS);
+
+    while (1) {
+        // Acende amarelo (verde + vermelho)
+        gpio_pin_set_dt(&led_verde, 1);
+        gpio_pin_set_dt(&led_vermelho, 1);
+        printk("Amarelo ACESO\n");
+        k_msleep(TEMPO_PISCA_ON_MS);
+
+        // Apaga amarelo
+        gpio_pin_set_dt(&led_verde, 0);
+        gpio_pin_set_dt(&led_vermelho, 0);
+        printk("Amarelo APAGADO\n");
+        k_msleep(TEMPO_PISCA_OFF_MS);
+    }
+}
 
 /* =====================================================================
  * Thread LED Verde - 3 segundos
@@ -141,7 +175,7 @@ void thread_led_vermelho(void)
 }
 
 /* =====================================================================
- * Definição das threads
+ * Definição das threads - Modo Dia
  * ===================================================================== */
 K_THREAD_DEFINE(thread_verde_id, 1024, thread_led_verde, NULL, NULL, NULL,
                 5, 0, 0);
@@ -156,8 +190,35 @@ void main(void)
 {
     printk("===========================================\n");
     printk("Sistema de Semáforo - FRDM-KL25Z\n");
-    printk("Verde: %d ms | Amarelo: %d ms | Vermelho: %d ms\n",
-           TEMPO_VERDE_MS, TEMPO_AMARELO_MS, TEMPO_VERMELHO_MS);
-    printk("Usando Mutex para exclusão mútua\n");
     printk("===========================================\n");
+
+    // Configura os pinos dos LEDs
+    int ret_verde = gpio_pin_configure_dt(&led_verde, GPIO_OUTPUT_INACTIVE);
+    int ret_vermelho = gpio_pin_configure_dt(&led_vermelho, GPIO_OUTPUT_INACTIVE);
+    
+    if (ret_verde < 0 || ret_vermelho < 0) {
+        printk("ERRO: Falha ao configurar GPIOs\n");
+        return;
+    }
+
+    // Verifica o modo de operação configurado
+    if (MODO_OPERACAO == 1) {
+        // *** MODO NOTURNO ***
+        // Suspende as threads do modo dia
+        k_thread_suspend(thread_verde_id);
+        k_thread_suspend(thread_amarelo_id);
+        k_thread_suspend(thread_vermelho_id);
+        
+        // Executa modo noturno (amarelo piscante)
+        modo_noite();
+    } else {
+        // *** MODO DIA (padrão) ***
+        printk("MODO DIURNO ATIVO\n");
+        printk("Verde: %d ms | Amarelo: %d ms | Vermelho: %d ms\n",
+               TEMPO_VERDE_MS, TEMPO_AMARELO_MS, TEMPO_VERMELHO_MS);
+        printk("Sequência: Verde -> Amarelo -> Vermelho\n");
+        printk("===========================================\n\n");
+        
+        // As threads já estão rodando automaticamente
+    }
 }
