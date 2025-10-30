@@ -8,11 +8,11 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/include",
-                "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/src",
-                "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/.pio/build/frdm_kl25z/zephyr/include/generated/zephyr",
+                "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/include",
+                "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/src",
+                "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/.pio/build/frdm_kl25z/zephyr/include/generated/zephyr",
                 "C:/Users/Dimi/.platformio/packages/framework-zephyr/include",
-                "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/.pio/build/frdm_kl25z/zephyr/include/generated",
+                "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/.pio/build/frdm_kl25z/zephyr/include/generated",
                 "C:/Users/Dimi/.platformio/packages/framework-zephyr/soc/nxp/kinetis",
                 "C:/Users/Dimi/.platformio/packages/framework-zephyr/soc/nxp/kinetis/kl2x",
                 "C:/Users/Dimi/.platformio/packages/framework-zephyr/soc/nxp/kinetis/common",
@@ -29,11 +29,11 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/include",
-                    "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/src",
-                    "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/.pio/build/frdm_kl25z/zephyr/include/generated/zephyr",
+                    "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/include",
+                    "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/src",
+                    "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/.pio/build/frdm_kl25z/zephyr/include/generated/zephyr",
                     "C:/Users/Dimi/.platformio/packages/framework-zephyr/include",
-                    "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/.pio/build/frdm_kl25z/zephyr/include/generated",
+                    "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/.pio/build/frdm_kl25z/zephyr/include/generated",
                     "C:/Users/Dimi/.platformio/packages/framework-zephyr/soc/nxp/kinetis",
                     "C:/Users/Dimi/.platformio/packages/framework-zephyr/soc/nxp/kinetis/kl2x",
                     "C:/Users/Dimi/.platformio/packages/framework-zephyr/soc/nxp/kinetis/common",
@@ -61,7 +61,7 @@
             ],
             "cStandard": "c99",
             "forcedInclude": [
-                "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/.pio/build/frdm_kl25z/zephyr/include/generated/zephyr/autoconf.h",
+                "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/.pio/build/frdm_kl25z/zephyr/include/generated/zephyr/autoconf.h",
                 "C:/Users/Dimi/.platformio/packages/framework-zephyr/include/zephyr/toolchain/zephyr_stdint.h",
                 ""
             ],
@@ -74,7 +74,7 @@
                 "-isystem",
                 "C:/Users/Dimi/.platformio/packages/framework-zephyr/lib/libc/common/include",
                 "-isystem",
-                "D:/Dimi/Documents/PlatformIO/Projects/251007-132958-zephyr-blink/.pio/build/frdm_kl25z/modules/picolibc/picolibc/include",
+                "D:/Dimi/Documents/PlatformIO/Projects/PSI-Microcontroladores2-Aula01/.pio/build/frdm_kl25z/modules/picolibc/picolibc/include",
                 "-isystem",
                 "c:/users/dimi/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/8.2.1/include",
                 "-isystem",

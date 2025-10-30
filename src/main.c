@@ -2,75 +2,162 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 
-#define SLEEP_LED0_MS 1000   // LED0: 1 segundo
-#define SLEEP_LED1_MS 350   // LED1: 0,35 segundos 
+// Tempos de acendimento de cada LED
+#define TEMPO_VERDE_MS    3000   // 3 segundos
+#define TEMPO_AMARELO_MS  1000   // 1 segundo
+#define TEMPO_VERMELHO_MS 4000   // 4 segundos
 
 // LEDs onboard da KL25Z (RGB)
-#define LED0_NODE DT_ALIAS(led0)   // geralmente verde
-#define LED1_NODE DT_ALIAS(led1)   // geralmente vermelho
+#define LED_VERDE_NODE    DT_ALIAS(led0)   // LED verde
+#define LED_VERMELHO_NODE DT_ALIAS(led2)   // LED vermelho
+// Amarelo = Verde + Vermelho ligados juntos
 
-#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
-static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+// Verificação e configuração dos LEDs
+#if DT_NODE_HAS_STATUS(LED_VERDE_NODE, okay)
+static const struct gpio_dt_spec led_verde = GPIO_DT_SPEC_GET(LED_VERDE_NODE, gpios);
 #else
 #error "Unsupported board: led0 devicetree alias is not defined"
 #endif
 
-#if DT_NODE_HAS_STATUS(LED1_NODE, okay)
-static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+#if DT_NODE_HAS_STATUS(LED_VERMELHO_NODE, okay)
+static const struct gpio_dt_spec led_vermelho = GPIO_DT_SPEC_GET(LED_VERMELHO_NODE, gpios);
 #else
 #error "Unsupported board: led1 devicetree alias is not defined"
 #endif
 
+// Mutex para exclusão mútua entre os LEDs
+K_MUTEX_DEFINE(led_mutex);
+
+// Semáforos para sincronização entre threads
+K_SEM_DEFINE(sem_verde, 1, 1);      // Verde começa primeiro
+K_SEM_DEFINE(sem_amarelo, 0, 1);    // Amarelo espera
+K_SEM_DEFINE(sem_vermelho, 0, 1);   // Vermelho espera
+
 /* =====================================================================
- * Thread 1 - LED0 (1 segundo)
+ * Thread LED Verde - 3 segundos
  * ===================================================================== */
-void led0_blink_thread(void)
+void thread_led_verde(void)
 {
-    int ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE);
+    int ret = gpio_pin_configure_dt(&led_verde, GPIO_OUTPUT_INACTIVE);
     if (ret < 0) {
-        printk("Error %d: failed to configure LED0 pin\n", ret);
+        printk("Erro %d: falha ao configurar LED Verde\n", ret);
         return;
     }
 
-    printk("LED0 blinking on %s pin %d every %d ms\n",
-           led0.port->name, led0.pin, SLEEP_LED0_MS);
+    printk("Thread LED Verde iniciada\n");
 
     while (1) {
-        gpio_pin_toggle_dt(&led0);
-        k_msleep(SLEEP_LED0_MS);
+        // Espera sua vez
+        k_sem_take(&sem_verde, K_FOREVER);
+        
+        // Adquire o mutex para acesso exclusivo
+        k_mutex_lock(&led_mutex, K_FOREVER);
+        
+        printk("LED VERDE aceso\n");
+        gpio_pin_set_dt(&led_verde, 1);
+        k_msleep(TEMPO_VERDE_MS);
+        gpio_pin_set_dt(&led_verde, 0);
+        printk("LED VERDE apagado\n");
+        
+        // Libera o mutex
+        k_mutex_unlock(&led_mutex);
+        
+        // Sinaliza para o próximo LED (amarelo)
+        k_sem_give(&sem_amarelo);
     }
 }
 
 /* =====================================================================
- * Thread 2 - LED1 (0,5 segundo)
+ * Thread LED Amarelo - 1 segundo
+ * (Amarelo = Verde + Vermelho ligados)
  * ===================================================================== */
-void led1_blink_thread(void)
+void thread_led_amarelo(void)
 {
-    int ret = gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
-    if (ret < 0) {
-        printk("Error %d: failed to configure LED1 pin\n", ret);
+    int ret_verde = gpio_pin_configure_dt(&led_verde, GPIO_OUTPUT_INACTIVE);
+    int ret_vermelho = gpio_pin_configure_dt(&led_vermelho, GPIO_OUTPUT_INACTIVE);
+    
+    if (ret_verde < 0 || ret_vermelho < 0) {
+        printk("Erro: falha ao configurar LEDs para Amarelo\n");
         return;
     }
 
-    printk("LED1 blinking on %s pin %d every %d ms\n",
-           led1.port->name, led1.pin, SLEEP_LED1_MS);
+    printk("Thread LED Amarelo iniciada\n");
 
     while (1) {
-        gpio_pin_toggle_dt(&led1);
-        k_msleep(SLEEP_LED1_MS);
+        // Espera sua vez
+        k_sem_take(&sem_amarelo, K_FOREVER);
+        
+        // Adquire o mutex para acesso exclusivo
+        k_mutex_lock(&led_mutex, K_FOREVER);
+        
+        printk("LED AMARELO aceso (Verde + Vermelho)\n");
+        gpio_pin_set_dt(&led_verde, 1);
+        gpio_pin_set_dt(&led_vermelho, 1);
+        k_msleep(TEMPO_AMARELO_MS);
+        gpio_pin_set_dt(&led_verde, 0);
+        gpio_pin_set_dt(&led_vermelho, 0);
+        printk("LED AMARELO apagado\n");
+        
+        // Libera o mutex
+        k_mutex_unlock(&led_mutex);
+        
+        // Sinaliza para o próximo LED (vermelho)
+        k_sem_give(&sem_vermelho);
     }
 }
 
 /* =====================================================================
- * Criação das threads
+ * Thread LED Vermelho - 4 segundos
  * ===================================================================== */
-K_THREAD_DEFINE(led0_thread_id, 1024, led0_blink_thread, NULL, NULL, NULL,
+void thread_led_vermelho(void)
+{
+    int ret = gpio_pin_configure_dt(&led_vermelho, GPIO_OUTPUT_INACTIVE);
+    if (ret < 0) {
+        printk("Erro %d: falha ao configurar LED Vermelho\n", ret);
+        return;
+    }
+
+    printk("Thread LED Vermelho iniciada\n");
+
+    while (1) {
+        // Espera sua vez
+        k_sem_take(&sem_vermelho, K_FOREVER);
+        
+        // Adquire o mutex para acesso exclusivo
+        k_mutex_lock(&led_mutex, K_FOREVER);
+        
+        printk("LED VERMELHO aceso\n");
+        gpio_pin_set_dt(&led_vermelho, 1);
+        k_msleep(TEMPO_VERMELHO_MS);
+        gpio_pin_set_dt(&led_vermelho, 0);
+        printk("LED VERMELHO apagado\n");
+        
+        // Libera o mutex
+        k_mutex_unlock(&led_mutex);
+        
+        // Sinaliza para o próximo LED (verde - reinicia o ciclo)
+        k_sem_give(&sem_verde);
+    }
+}
+
+/* =====================================================================
+ * Definição das threads
+ * ===================================================================== */
+K_THREAD_DEFINE(thread_verde_id, 1024, thread_led_verde, NULL, NULL, NULL,
                 5, 0, 0);
 
-K_THREAD_DEFINE(led1_thread_id, 1024, led1_blink_thread, NULL, NULL, NULL,
+K_THREAD_DEFINE(thread_amarelo_id, 1024, thread_led_amarelo, NULL, NULL, NULL,
+                5, 0, 0);
+
+K_THREAD_DEFINE(thread_vermelho_id, 1024, thread_led_vermelho, NULL, NULL, NULL,
                 5, 0, 0);
 
 void main(void)
 {
-    printk("Sistema iniciado na FRDM-KL25Z. Duas threads de LED criadas.\n");
+    printk("===========================================\n");
+    printk("Sistema de Semáforo - FRDM-KL25Z\n");
+    printk("Verde: %d ms | Amarelo: %d ms | Vermelho: %d ms\n",
+           TEMPO_VERDE_MS, TEMPO_AMARELO_MS, TEMPO_VERMELHO_MS);
+    printk("Usando Mutex para exclusão mútua\n");
+    printk("===========================================\n");
 }
