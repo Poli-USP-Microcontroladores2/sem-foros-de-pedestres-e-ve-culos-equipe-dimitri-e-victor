@@ -1,0 +1,37 @@
+/* * Arquivo de Overlay da Aplicação (app.overlay)
+ * Adiciona hardware customizado ao .dts padrão da placa.
+ */
+
+/* 1. Habilita o controlador da Porta C (gpioc), que está desabilitado por padrão */
+&gpioc {
+	status = "okay";
+};
+
+/* * 2. Define nossos pinos de comunicação e cria aliases para eles.
+ */
+/ {
+	/* * Cria "nós" virtuais para nossos pinos.
+	 * Usamos "compatible" conhecidos (como gpio-led ou gpio-keys)
+	 * para que a macro GPIO_DT_SPEC_GET(node, gpios) funcione.
+	 */
+	
+	/* Nó para nosso pino de Saída (PTD4) */
+	sinal_pedido_pin: sinal_pedido_node {
+		compatible = "gpio-led"; /* Um "truque" comum, finge ser um LED */
+		gpios = <&gpiod 4 0>;   /* Define o pino PTD4, flags 0 (Ativo Alto) */
+		label = "Sinal de Pedido para MCU Veiculo";
+	};
+
+	/* Nó para nosso pino de Entrada (PTC3) */
+	sinal_ok_pin: sinal_ok_node {
+		compatible = "gpio-keys"; /* Finge ser um botão */
+		gpios = <&gpioc 3 0>;    /* Define o pino PTC3, flags 0 (Ativo Alto por padrão) */
+		label = "Sinal de OK do MCU Veiculo";
+	};
+
+	/* 3. Agora, criamos os aliases que nosso código src/main.c vai usar */
+	aliases {
+		sinal-pedido = &sinal_pedido_pin;      /* Nosso código usará DT_ALIAS(sinal-pedido) */
+		sinal-ok-veiculo = &sinal_ok_pin;  /* Nosso código usará DT_ALIAS(sinal-ok-veiculo) */
+	};
+};
