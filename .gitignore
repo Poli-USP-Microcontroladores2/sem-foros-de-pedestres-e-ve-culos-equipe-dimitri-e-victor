@@ -1,0 +1,31 @@
+# Arquivos do VS Code
+.vscode/
+
+# Arquivos do PlatformIO
+.pio/
+
+# Arquivos de Build/Cache do Zephyr (se gerados)
+build/
+.cache/
+
+# Arquivos do Python
+__pycache__/
+*.pyc
+
+# Arquivos do Windows
+*.exe
+*.dll
+*.obj
+*.o
+*.a
+*.lib
+*.so
+
+# Arquivos de build do C/C++
+*.o
+*.d
+*.a
+*.so
+*.elf
+*.bin
+*.hex
