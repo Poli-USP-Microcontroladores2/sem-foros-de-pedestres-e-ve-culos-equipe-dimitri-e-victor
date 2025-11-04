@@ -80,10 +80,10 @@ Garantir que **nunca** ocorra o estado simultâneo **Veículo Verde** e **Pedest
 - **Plataforma:** NXP FRDM-KL25Z  
 - **RTOS:** Zephyr 3.x  
 - **Ferramentas:** `west`, `platformio`, `Ztest`, `QEMU`  
-- **MCU 2 (Pedestre):** Documento “Plano de Testes — Semáforo de Pedestres (MCU 2)”
+
 
 ---
 
-**Autor:** Dimitri Garcia 
-
+**Autor:** Dimitri Garcia  
+ 
 **Versão:** 1.0
