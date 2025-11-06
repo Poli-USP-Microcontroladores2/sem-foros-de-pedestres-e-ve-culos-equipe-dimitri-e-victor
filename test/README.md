@@ -77,7 +77,7 @@ Garantir que **nunca** ocorra o estado simultâneo **Veículo Verde** e **Pedest
 ## 5. Referências
 
 - **Plataforma:** NXP FRDM-KL25Z  
-- **RTOS:** Zephyr 3.x  
+- **RTOS:** Zephyr 4.2
 - **Ferramentas:** `west`, `platformio`, `Ztest`, `QEMU`  
 
 
@@ -85,4 +85,4 @@ Garantir que **nunca** ocorra o estado simultâneo **Veículo Verde** e **Pedest
 
 **Autor:** Dimitri Garcia  
  
-**Versão:** 1.0
+
