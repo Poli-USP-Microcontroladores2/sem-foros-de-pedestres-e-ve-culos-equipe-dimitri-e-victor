@@ -24,14 +24,14 @@ A validação do firmware será executada em **três fases**:
 
 **Objetivo:**  
 Validar individualmente os componentes internos e a lógica RTOS do semáforo veicular.  
-**Foco:** sincronismo de threads, uso correto de `k_mutex`, `k_sem`, e resposta ao evento de botão (simulado via jumper PTA1 → GND).
+**Foco:** sincronismo de threads, uso correto de `k_mutex`, `k_sem`, e resposta ao evento de botão (simulado via jumper PTA16 → GND).
 
 | ID do Teste | Módulo Testado         | Cenário de Teste                          | Passos de Execução (Ztest / Emulação)                                                                                                                                   | Resultado Esperado |
 |--------------|-----------------------|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
 | **TU-01**    | `k_mutex`             | Exclusão Mútua dos LEDs                   | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Executar por 3 ciclos completos.<br>3. Verificar logs `printk`.                                                              | Nenhum par de LEDs (Verde + Vermelho) deve acender simultaneamente. |
-| **TU-02**    | `thread_led_verde`    | Temporização do Verde                     | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Medir tempo entre `LED VERDE aceso` e `LED VERDE apagado`.                                                                  | Deve durar **≈ 3000 ms ± tolerância**. |
-| **TU-03**    | `thread_led_amarelo`  | Temporização do Amarelo                   | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Medir tempo entre `LED AMARELO aceso` e `LED AMARELO apagado`.                                                              | Deve durar **≈ 1000 ms ± tolerância**. |
-| **TU-04**    | `thread_led_vermelho` | Temporização do Vermelho                  | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Medir tempo entre `LED VERMELHO aceso` e `LED VERMELHO apagado`.                                                            | Deve durar **≈ 4000 ms ± tolerância**. |
+| **TU-02**    | `thread_led_verde`    | Temporização do Verde                     | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Medir tempo entre `LED VERDE aceso` e `LED VERDE apagado`.                                                                  | Deve durar **≈ 3000 ms**. |
+| **TU-03**    | `thread_led_amarelo`  | Temporização do Amarelo                   | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Medir tempo entre `LED AMARELO aceso` e `LED AMARELO apagado`.                                                              | Deve durar **≈ 1000 ms**. |
+| **TU-04**    | `thread_led_vermelho` | Temporização do Vermelho                  | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Medir tempo entre `LED VERMELHO aceso` e `LED VERMELHO apagado`.                                                            | Deve durar **≈ 4000 ms**. |
 | **TU-05**    | `thread_botao`        | Detecção de Pedestre (ISR simulada)       | 1. Compilar em `MODO_OPERACAO = 0`.<br>2. Forçar `gpio_pin_get()` = 0 via mock / jumper.<br>3. Observar mensagem `"PEDESTRE SOLICITOU TRAVESSIA"`.                    | Flag `pedestre_solicitado` deve tornar-se `true` e iniciar o ciclo `AMARELO → VERMELHO`. |
 
 ---
@@ -47,7 +47,7 @@ Validar que o sistema cumpre os **requisitos funcionais de operação** e respon
 | **TS-02**    | Ciclo Automático (Dia)   | LEDs alternando corretamente      | 1. Fazer upload no hardware.<br>2. Observar LEDs.<br>3. Medir sequência e tempos.                                                                              | Verde → Amarelo → Vermelho → Verde (3s, 1s, 4s). Nenhum conflito simultâneo. |
 | **TS-03**    | Compilação do Modo Noite | MODO_OPERACAO = 1                 | 1. Definir `#define MODO_OPERACAO 1`.<br>2. Compilar.                                                                    | Build **[SUCCESS]**. |
 | **TS-04**    | Pisca Noturno (Amarelo)  | Sequência Noturna                 | 1. Fazer upload do firmware (MODO 1).<br>2. Observar LEDs.                                                              | LEDs piscando juntos (amarelo simulado) com período de **2 s** (1 s aceso, 1 s apagado). |
-| **TS-05**    | Interação com Botão      | Travessia de Pedestre (Dia)       | 1. Firmware com `MODO_OPERACAO = 0`.<br>2. Conectar jumper PTA1 → GND.<br>3. Observar transição automática para ciclo pedestre. | Ao detectar o botão, o sistema força transição para **amarelo → vermelho**, desativando o verde até concluir o ciclo. |
+| **TS-05**    | Interação com Botão      | Travessia de Pedestre (Dia)       | 1. Firmware com `MODO_OPERACAO = 0`.<br>2. Conectar jumper PTA16 → GND.<br>3. Observar transição automática para ciclo pedestre. | Ao detectar o botão, o sistema força transição para **amarelo → vermelho**, desativando o verde até concluir o ciclo. |
 
 ---
 
@@ -59,9 +59,8 @@ Garantir que **nunca** ocorra o estado simultâneo **Veículo Verde** e **Pedest
 
 | ID do Teste | Requisito Testado | Cenário de Teste | Passos de Execução (Hardware) | Resultado Esperado |
 |--------------|------------------|------------------|--------------------------------|--------------------|
-| **TI-01** | Sinalização de Pedido | Travessia por Botão | 1. MCU 1 (Veículo) em "Verde".<br>2. MCU 2 (Pedestre) pressiona botão.<br>3. MCU 2 envia sinal (Pino X) para MCU 1.<br>4. MCU 1 inicia sequência de fechamento (V→A→R). | MCU 1 só retorna sinal "OK" (Pino Y) quando estiver em Vermelho. |
+| **TI-01** | Sinalização de Pedido | Travessia por Botão | 1. Microcontrolador (MCU) 1 (Veículo) em "Verde".<br>2. MCU 2 (Pedestre) pressiona botão.<br>3. MCU 2 envia sinal (Pino X) para MCU 1.<br>4. MCU 1 inicia sequência de fechamento (V→A→R). | MCU 1 só retorna sinal "OK" (Pino Y) quando estiver em Vermelho. |
 | **TI-02** | Sincronismo Total | Ciclo Coordenado | 1. MCU 1 e MCU 2 executando.<br>2. Pedestre solicita travessia. | **Nunca** ocorre Verde (Veículo) + Verde (Pedestre). |
-| **TI-03** | Falha de Comunicação | Pino Y desconectado | 1. Repetir TI-01.<br>2. Desconectar linha “OK” (Y). | MCU 2 mantém Vermelho permanentemente — travessia não liberada. |
 
 ---
 
